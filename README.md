@@ -1,37 +1,20 @@
-DisenCDR
-===
+## A<sup>2</sup>DCDR
+The source code is for the paper: **“Adversarial Alignment and Disentanglement for Cross-Domain CTR Prediction with Domain-Encompassing Features”**.  This implementation references the source code from the paper **“DisenCDR: Learning Disentangled Representations for Cross-Domain Recommendation.”**
 
-The source code is for the paper: “DisenCDR: Learning Disentangled Representations for Cross-Domain Recommendation” accepted in SIGIR 2022 by Jiangxia Cao, Xixun Lin, Xin Cong, Jing Ya, Tingwen Liu and Bin Wang.
+## Requirements
 
-```
-@inproceedings{cao2022disencdr,
-  title={DisenCDR: Learning Disentangled Representations for Cross-Domain Recommendation},
-  author={Cao, Jiangxia and Lin, Xixun and Cong, Xin and Ya, Jing and Liu, Tingwen and Wang, Bin},
-  booktitle={International Conference on Research on Development in Information Retrieval (SIGIR)},
-  year={2022}
-}
-```
+**Python=3.7.9**
 
-Requirements
----
+**PyTorch=1.6.0**
 
-Python=3.7.9
+**Scipy = 1.5.2**
 
-PyTorch=1.6.0
+**Numpy = 1.19.1**
 
-Scipy = 1.5.2
+## Usage
 
-Numpy = 1.19.1
+To run this project, please make sure that you have the following packages being downloaded. Our experiments are conducted on a PC with an 20-core Intel Xeon CPU, 40GB RAM and a Tesla P40 24GB GPU
 
-Usage
----
-
-To run this project, please make sure that you have the following packages being downloaded. Our experiments are conducted on a PC with an Intel Xeon E5 2.1GHz CPU, 256 RAM and a Tesla V100 32GB GPU. 
-
-Running example:
-
-```shell
-CUDA_VISIBLE_DEVICES=0 python -u train_rec.py --dataset sport_cloth > sport_cloth.log 2>&1&
-```
-
-
+`CUDA_VISIBLE_DEVICES=0 python -u train_rec.py --dataset sport_cloth > sport_cloth.log 2>&1 & `
+~                                                                                                                                                                                         
+~                       
