@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from model.singleLGCN import singleLGCN
 from model.adv_layer import ReverseLayerF
-from model.grl import WarmStartGradientReverseLayer
+#from model.grl import WarmStartGradientReverseLayer
 from torch.distributions.kl import kl_divergence
 from torch.distributions import Normal
 import math
