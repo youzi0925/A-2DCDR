@@ -33,7 +33,7 @@ parser.add_argument('--GNN', type=int, default=2, help='GNN layer.')
 parser.add_argument('--dropout', type=float, default=0.3, help='GNN layer dropout rate.')
 parser.add_argument('--optim', choices=['sgd', 'adagrad', 'adam', 'adamax'], default='adam',
                     help='Optimizer: sgd, adagrad, adam or adamax.')
-parser.add_argument('--lr', type=float, default=0.00185, help='Applies to sgd and adagrad.')
+parser.add_argument('--lr', type=float, default=0.00195, help='Applies to sgd and adagrad.')
 parser.add_argument('--lr_decay', type=float, default=1.0, help='Learning rate decay rate.')
 parser.add_argument('--weight_decay', type=float, default=5e-4, help='Weight decay (L2 loss on parameters).')
 parser.add_argument('--decay_epoch', type=int, default=10, help='Decay learning rate after this epoch.')
@@ -236,27 +236,6 @@ for epoch in range(1, opt['num_epoch'] + 1):
     # save
     if epoch == 1 or dev_score > max(dev_score_history):
         print("new best model saved.")
-    if epoch in [50, 100]:
-        filename  = opt["dataset"]
-        filename = filename.split("_")
-        source_name = filename[0]
-        target_name = filename[1]
-        print("save embs source {}, target {}".format(source_name, target_name))
-        # 使用 numpy.savetxt() 函数将数组追加保存为 CSV 文件
-        #source_user_share, source_user_specific, target_user_share, target_user_specific
-        source_user_share_np, source_user_specific_np, target_user_share_np, target_user_specific_np = source_user_share.cpu().detach().numpy(), source_user_specific.cpu().detach().numpy(), target_user_share.cpu().detach().numpy(), target_user_specific.cpu().detach().numpy()
-        # 打开文件并写入数据
-        with open('t-SNE/data/source_user_share_{}_{}_{}.csv'.format(source_name, target_name, epoch), 'wb') as f1:
-            np.savetxt(f1, source_user_share_np, delimiter=',', header='', footer='')
-
-        with open('t-SNE/data/source_user_specific_{}_{}_{}.csv'.format(source_name,target_name, epoch), 'wb') as f2:
-            np.savetxt(f2, source_user_specific_np, delimiter=',', header='', footer='')
-
-        with open('t-SNE/data/target_user_share_{}_{}_{}.csv'.format(source_name, target_name, epoch), 'wb') as f3:
-            np.savetxt(f3, target_user_share_np, delimiter=',', header='', footer='')
-
-        with open('t-SNE/data/target_user_specific_{}_{}_{}.csv'.format(source_name, target_name, epoch), 'wb') as f4:
-            np.savetxt(f4, target_user_specific_np, delimiter=',', header='', footer='')
 
     if epoch % opt['save_epoch'] != 0:
         pass
