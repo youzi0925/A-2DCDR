@@ -15,6 +15,4 @@ The source code is for the paper: **“Adversarial Alignment and Disentanglement
 
 To run this project, please make sure that you have the following packages being downloaded. Our experiments are conducted on a PC with an 20-core Intel Xeon CPU, 40GB RAM and a Tesla P40 24GB GPU
 
-`CUDA_VISIBLE_DEVICES=0 python3 -u train_rec.py --dataset sport_cloth > sport_cloth.log 2>&1 & `
-~                                                                                                                                                                                         
-~                       
+`CUDA_VISIBLE_DEVICES=0 python3 -u train_rec.py --dataset sport_cloth > sport_cloth.log 2>&1 & `                                                                                                                                                                                                            
