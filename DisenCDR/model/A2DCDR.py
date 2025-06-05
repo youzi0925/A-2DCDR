@@ -133,25 +133,13 @@ class A2DCDR(nn.Module):
         self.mmd_loss = self.w_alpha * self._mmd_linear(source_learn_share_user, target_learn_share_user) 
         self.reverse_mmd_loss = self.w_alpha * self._mmd_linear(source_learn_share_user, reverse_target_learn_specific_user)
 
-
-        # self.loss_reg = self.w_beta_b * self._orthogonal_loss(target_learn_specific_user, target_learn_share_user) + self.w_beta_a * self._orthogonal_loss(source_learn_specific_user, source_learn_share_user)
         self.loss_reg = self.w_beta_b * self.club.learning_loss(target_learn_specific_user, target_learn_share_user) + self.w_beta_a * self.club.learning_loss(source_learn_specific_user, source_learn_share_user)
-
-        # self.loss_recon = self.w_gamma_b * self._l2_rec(target_learn_share_user + target_learn_specific_user , target_user+target_user_share) +  self.w_gamma_a * self._l2_rec(source_learn_share_user + source_learn_specific_user , source_user+source_user_share)
-
-        # source_rec = self.source_feature_reconstructor(torch.cat((source_learn_share_user,source_learn_specific_user), dim=-1))
-        # target_rec = self.target_feature_reconstructor(torch.cat((target_learn_share_user,target_learn_specific_user), dim=-1))
-
-        # self.loss_recon = 0.1*self.w_l2 * self.loss_MSE(torch.cat((source_user,source_user_share), dim=-1), source_rec) + 0.9*self.w_l2 * self.loss_MSE(torch.cat((target_user,target_user_share), dim=-1), target_rec)
 
         source_rec = self.source_feature_reconstructor(torch.cat((source_learn_share_user,source_learn_specific_user), dim=-1))
         target_rec = self.target_feature_reconstructor(torch.cat((target_learn_share_user,target_learn_specific_user), dim=-1))
 
         self.loss_recon = self.w_gamma_a * self.loss_MSE(torch.cat((source_user,source_user_share), dim=-1), source_rec) + self.w_gamma_b * self.loss_MSE(torch.cat((target_user,target_user_share), dim=-1), target_rec)
-
-        # self.loss_recon = self.w_gamma_b * self._l2_rec(torch.cat((target_learn_share_user,target_learn_specific_user), dim=-1) , torch.cat((target_user,target_user_share), dim=-1)) +  self.w_gamma_a * self._l2_rec(torch.cat((source_learn_share_user,source_learn_specific_user), dim=-1) , torch.cat((source_user,source_user_share), dim=-1))
-
-        # return source_final_user, source_learn_specific_item, target_final_user, target_learn_specific_item
+        
         return source_learn_share_user, source_learn_specific_user, source_learn_specific_item, target_learn_share_user, target_learn_specific_user, target_learn_specific_item
 
 
