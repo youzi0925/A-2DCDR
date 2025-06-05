@@ -24,7 +24,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', type=str, default='phone_electronic, sport_phone, sport_cloth, electronic_cloth', help='')
 
 # model part
-parser.add_argument('--model', type=str, default="DisenCDR", help="The model name.")
+parser.add_argument('--model', type=str, default="A2DCDR", help="The model name.")
+parser.add_argument('--gen_dim', type=int, default=64, help='generate nn dimension.')
 parser.add_argument('--feature_dim', type=int, default=128, help='Initialize network embedding dimension.')
 parser.add_argument('--hidden_dim', type=int, default=128, help='GNN network hidden embedding dimension.')
 parser.add_argument('--GNN', type=int, default=2, help='GNN layer.')
@@ -32,16 +33,18 @@ parser.add_argument('--GNN', type=int, default=2, help='GNN layer.')
 parser.add_argument('--dropout', type=float, default=0.3, help='GNN layer dropout rate.')
 parser.add_argument('--optim', choices=['sgd', 'adagrad', 'adam', 'adamax'], default='adam',
                     help='Optimizer: sgd, adagrad, adam or adamax.')
-parser.add_argument('--lr', type=float, default=0.001, help='Applies to sgd and adagrad.')
-parser.add_argument('--lr_decay', type=float, default=0.9, help='Learning rate decay rate.')
+parser.add_argument('--lr', type=float, default=0.00185, help='Applies to sgd and adagrad.')
+parser.add_argument('--lr_decay', type=float, default=1.0, help='Learning rate decay rate.')
 parser.add_argument('--weight_decay', type=float, default=5e-4, help='Weight decay (L2 loss on parameters).')
 parser.add_argument('--decay_epoch', type=int, default=10, help='Decay learning rate after this epoch.')
 parser.add_argument('--leakey', type=float, default=0.1)
 parser.add_argument('--cpu', action='store_true', help='Ignore CUDA.')
 parser.add_argument('--cuda', type=bool, default=torch.cuda.is_available())
 parser.add_argument('--beta', type=float, default=0.9)
+parser.add_argument('--fuse_heads', type=int, default=1)
+parser.add_argument('--regs', nargs='?', default='[1e-3,1e-4,1e-4]', help='Regularizations.')
 # train part
-parser.add_argument('--num_epoch', type=int, default=50, help='Number of total training epochs.')
+parser.add_argument('--num_epoch', type=int, default=100, help='Number of total training epochs.')
 parser.add_argument('--batch_size', type=int, default=1024, help='Training batch size.')
 parser.add_argument('--log_step', type=int, default=200, help='Print log every k steps.')
 parser.add_argument('--log', type=str, default='logs.txt', help='Write training log to file.')
@@ -51,10 +54,17 @@ parser.add_argument('--id', type=str, default='00', help='Model ID under which t
 parser.add_argument('--seed', type=int, default=2040)
 parser.add_argument('--load', dest='load', action='store_true', default=False,  help='Load pretrained model.')
 parser.add_argument('--model_file', type=str, help='Filename of the pretrained model.')
+#loss weight
+parser.add_argument('--w_gamma_a', type=float, default=0.01, help='Weight of gamma_a loss')
+parser.add_argument('--w_gamma_b', type=float, default=0.09, help='Weight of gamma_b loss')
+parser.add_argument('--w_beta_a', type=float, default=1e-4, help='Weight of beta_a loss')
+parser.add_argument('--w_beta_b', type=float, default=9e-4, help='Weight of beta_b loss')
+parser.add_argument('--w_alpha', type=float, default=1.0, help='Weight of mmd loss')
 
 def seed_everything(seed=1111):
     random.seed(seed)
     torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     np.random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
@@ -73,7 +83,7 @@ opt = vars(args)
 seed_everything(opt["seed"])
 
 
-if "DisenCDR" in opt["model"]:
+if "A2DCDR" in opt["model"]:
     filename  = opt["dataset"]
     source_graph = "../dataset/" + filename + "/train.txt"
     source_G = GraphMaker(opt, source_graph)
@@ -139,23 +149,35 @@ dev_score_history = [0]
 current_lr = opt['lr']
 global_step = 0
 global_start_time = time.time()
-format_str = '{}: step {}/{} (epoch {}/{}), loss = {:.6f} ({:.3f} sec/batch), lr: {:.6f}'
+format_str = '{}: step {}/{} (epoch {}/{}), loss = {:.6f} ({:.3f} sec/batch), lr: {:.6f}, mmd_loss = {:.6f}, reverse_mmd_loss= {:.6f}, loss_reg= {:.6f}, loss_recon= {:.6f}'
 max_steps = len(train_batch) * opt['num_epoch']
 
 
 # start training
 for epoch in range(1, opt['num_epoch'] + 1):
     train_loss = 0
+    train_mmd_loss = 0
+    train_reverse_mmd_loss = 0
+    train_loss_reg = 0
+    train_loss_recon = 0
     start_time = time.time()
     for i, batch in enumerate(train_batch):
         global_step += 1
-        loss = trainer.reconstruct_graph(batch, source_UV, source_VU, target_UV, target_VU, source_adj, target_adj, epoch)
+        loss, mmd_loss, reverse_mmd_loss, loss_reg ,loss_recon = trainer.reconstruct_graph(batch, source_UV, source_VU, target_UV, target_VU, source_adj, target_adj, epoch)
         train_loss += loss
+        train_mmd_loss += mmd_loss
+        train_reverse_mmd_loss += reverse_mmd_loss
+        train_loss_reg += loss_reg
+        train_loss_recon += loss_recon
 
     duration = time.time() - start_time
     train_loss = train_loss/len(train_batch)
+    train_mmd_loss = train_mmd_loss/len(train_batch)
+    train_reverse_mmd_loss = train_reverse_mmd_loss/len(train_batch)
+    train_loss_reg = train_loss_reg/len(train_batch)
+    train_loss_recon = train_loss_recon/len(train_batch)
     print(format_str.format(datetime.now(), global_step, max_steps, epoch, \
-                                    opt['num_epoch'], train_loss, duration, current_lr))
+                                    opt['num_epoch'], train_loss, duration, current_lr, train_mmd_loss, train_reverse_mmd_loss, train_loss_reg, train_loss_recon))
 
     if epoch % 10:
         # pass
@@ -165,7 +187,7 @@ for epoch in range(1, opt['num_epoch'] + 1):
     print("Evaluating on dev set...")
     trainer.model.eval()
 
-    trainer.evaluate_embedding(source_UV, source_VU, target_UV, target_VU, source_adj, target_adj)
+    source_user_share, source_user_specific, target_user_share, target_user_specific = trainer.evaluate_embedding(source_UV, source_VU, target_UV, target_VU, source_adj, target_adj)
 
     NDCG = 0.0
     HT = 0.0
@@ -214,6 +236,28 @@ for epoch in range(1, opt['num_epoch'] + 1):
     # save
     if epoch == 1 or dev_score > max(dev_score_history):
         print("new best model saved.")
+    if epoch in [50, 100]:
+        filename  = opt["dataset"]
+        filename = filename.split("_")
+        source_name = filename[0]
+        target_name = filename[1]
+        print("save embs source {}, target {}".format(source_name, target_name))
+        # 使用 numpy.savetxt() 函数将数组追加保存为 CSV 文件
+        #source_user_share, source_user_specific, target_user_share, target_user_specific
+        source_user_share_np, source_user_specific_np, target_user_share_np, target_user_specific_np = source_user_share.cpu().detach().numpy(), source_user_specific.cpu().detach().numpy(), target_user_share.cpu().detach().numpy(), target_user_specific.cpu().detach().numpy()
+        # 打开文件并写入数据
+        with open('t-SNE/data/source_user_share_{}_{}_{}.csv'.format(source_name, target_name, epoch), 'wb') as f1:
+            np.savetxt(f1, source_user_share_np, delimiter=',', header='', footer='')
+
+        with open('t-SNE/data/source_user_specific_{}_{}_{}.csv'.format(source_name,target_name, epoch), 'wb') as f2:
+            np.savetxt(f2, source_user_specific_np, delimiter=',', header='', footer='')
+
+        with open('t-SNE/data/target_user_share_{}_{}_{}.csv'.format(source_name, target_name, epoch), 'wb') as f3:
+            np.savetxt(f3, target_user_share_np, delimiter=',', header='', footer='')
+
+        with open('t-SNE/data/target_user_specific_{}_{}_{}.csv'.format(source_name, target_name, epoch), 'wb') as f4:
+            np.savetxt(f4, target_user_specific_np, delimiter=',', header='', footer='')
+
     if epoch % opt['save_epoch'] != 0:
         pass
 
