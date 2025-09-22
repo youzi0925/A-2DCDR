@@ -1,5 +1,5 @@
 ## A<sup>2</sup>DCDR
-The source code is for the paper: **“Adversarial Alignment and Disentanglement for Cross-Domain CTR Prediction with Domain-Encompassing Features”**.  This implementation references the source code from the paper **“DisenCDR: Learning Disentangled Representations for Cross-Domain Recommendation.”**
+The source code is for the paper: **“Adversarial Alignment and Disentanglement for Cross-Domain CTR Prediction with Domain-Encompassing Features”** accepted in ICDM WorkShop 2025 by Junyou He, Lixi Deng, Huichao Guo, Ye Tang, Yong Li and Sulong Xu.  This implementation references the source code from the paper **“DisenCDR: Learning Disentangled Representations for Cross-Domain Recommendation.”**
 
 ## Requirements
 
